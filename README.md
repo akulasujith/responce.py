@@ -1,106 +1,76 @@
-import unittest
-from unittest.mock import MagicMock
-from flask import Flask, jsonify
+pytest --cov . test/ --cov-report html                 
+================================================== test session starts ==================================================
+platform win32 -- Python 3.9.13, pytest-7.2.0, pluggy-1.5.0
+rootdir: C:\Sujith\Projects\SADRD\FinanceIT_SADRD\API
+plugins: Flask-Dance-3.2.0, cov-4.0.0
+collected 70 items / 2 errors
 
-import Services.APIResponse as apir
+======================================================== ERRORS ========================================================= 
+_________________________________________ ERROR collecting test/test_APIHome.py _________________________________________ 
+ImportError while importing test module 'C:\Sujith\Projects\SADRD\FinanceIT_SADRD\API\test\test_APIHome.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+C:\Program Files\Python39\lib\importlib\__init__.py:127: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+test\test_APIHome.py:8: in <module>
+    from APIHome import mainapp
+APIHome.py:13: in <module>
+    from db import db
+db.py:1: in <module>
+    from flask_sqlalchemy import SQLAlchemy
+venv\lib\site-packages\flask_sqlalchemy\__init__.py:14: in <module>
+    from flask import _app_ctx_stack, abort, current_app, request
+E   ImportError: cannot import name '_app_ctx_stack' from 'flask' (C:\Sujith\Projects\SADRD\FinanceIT_SADRD\API\venv\lib\site-packages\flask\__init__.py)
+___________________________________________ ERROR collecting test/test_db.py ____________________________________________ 
+ImportError while importing test module 'C:\Sujith\Projects\SADRD\FinanceIT_SADRD\API\test\test_db.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+C:\Program Files\Python39\lib\importlib\__init__.py:127: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+test\test_db.py:2: in <module>
+    from db import db
+db.py:1: in <module>
+    from flask_sqlalchemy import SQLAlchemy
+venv\lib\site-packages\flask_sqlalchemy\__init__.py:14: in <module>
+    from flask import _app_ctx_stack, abort, current_app, request
+E   ImportError: cannot import name '_app_ctx_stack' from 'flask' (C:\Sujith\Projects\SADRD\FinanceIT_SADRD\API\venv\lib\site-packages\flask\__init__.py)
+=================================================== warnings summary ==================================================== 
+venv\lib\site-packages\pandas\compat\numpy\__init__.py:10
+  C:\Sujith\Projects\SADRD\FinanceIT_SADRD\API\venv\lib\site-packages\pandas\compat\numpy\__init__.py:10: DeprecationWarning: distutils Version classes are deprecated. Use packaging.version instead.
+    _nlv = LooseVersion(_np_version)
 
-class TestApirespHandler(unittest.TestCase):
-    def setUp(self):
-        self.app = Flask(__name__)
-        self.app_context = self.app.app_context()
-        self.app_context.push()
-        self.handler = apir.ApirespHandler()
+venv\lib\site-packages\pandas\compat\numpy\__init__.py:11
+  C:\Sujith\Projects\SADRD\FinanceIT_SADRD\API\venv\lib\site-packages\pandas\compat\numpy\__init__.py:11: DeprecationWarning: distutils Version classes are deprecated. Use packaging.version instead.
+    np_version_under1p17 = _nlv < LooseVersion("1.17")
 
-    def tearDown(self):
-        self.app_context.pop()
+venv\lib\site-packages\pandas\compat\numpy\__init__.py:12
+  C:\Sujith\Projects\SADRD\FinanceIT_SADRD\API\venv\lib\site-packages\pandas\compat\numpy\__init__.py:12: DeprecationWarning: distutils Version classes are deprecated. Use packaging.version instead.
+    np_version_under1p18 = _nlv < LooseVersion("1.18")
 
-    def test_getResponse_empty_resp(self):
-        mock_resp = MagicMock()
-        mock_resp.__dict__ = {}
-        self.handler.setResponse(mock_resp)
-        response = self.handler.getResponse()
-        self.assertEqual(response.status_code, 200)
+venv\lib\site-packages\pandas\compat\numpy\__init__.py:13
+  C:\Sujith\Projects\SADRD\FinanceIT_SADRD\API\venv\lib\site-packages\pandas\compat\numpy\__init__.py:13: DeprecationWarning: distutils Version classes are deprecated. Use packaging.version instead.
+    _np_version_under1p19 = _nlv < LooseVersion("1.19")
 
-    def test_getResponse_invalid_json(self):
-        class NonSerializable:
-            pass
+venv\lib\site-packages\pandas\compat\numpy\__init__.py:14
+  C:\Sujith\Projects\SADRD\FinanceIT_SADRD\API\venv\lib\site-packages\pandas\compat\numpy\__init__.py:14: DeprecationWarning: distutils Version classes are deprecated. Use packaging.version instead.
+    _np_version_under1p20 = _nlv < LooseVersion("1.20")
 
-        mock_resp = MagicMock()
-        mock_resp.__dict__ = {"key": NonSerializable()}
-        self.handler.setResponse(mock_resp)
-        with self.assertRaises(TypeError):
-            self.handler.getResponse()
+venv\lib\site-packages\setuptools\_distutils\version.py:337
+  C:\Sujith\Projects\SADRD\FinanceIT_SADRD\API\venv\lib\site-packages\setuptools\_distutils\version.py:337: DeprecationWarning: distutils Version classes are deprecated. Use packaging.version instead.
+    other = LooseVersion(other)
 
-    def test_getResponse_nested_data(self):
-        mock_resp = MagicMock()
-        mock_resp.__dict__ = {
-            "key1": {"nested_key": "value"},
-            "key2": [1, 2, {"nested_key": "value"}]
-        }
-        self.handler.setResponse(mock_resp)
-        response = self.handler.getResponse()
-        self.assertEqual(response.status_code, 200)
+venv\lib\site-packages\pandas\compat\numpy\function.py:120
+venv\lib\site-packages\pandas\compat\numpy\function.py:120
+  C:\Sujith\Projects\SADRD\FinanceIT_SADRD\API\venv\lib\site-packages\pandas\compat\numpy\function.py:120: DeprecationWarning: distutils Version classes are deprecated. Use packaging.version instead.
+    if LooseVersion(__version__) >= LooseVersion("1.17.0"):
 
-    def test_getResponse_no_dict(self):
-        self.handler.setResponse(None)
-        response = self.handler.getResponse()
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.get_json(), {})
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
 
-    def test_getResponse_non_string_keys(self):
-        mock_resp = MagicMock()
-        mock_resp.__dict__ = {123: "value"}
-        self.handler.setResponse(mock_resp)
-        response = self.handler.getResponse()
-        self.assertEqual(response.status_code, 200)
+---------- coverage: platform win32, python 3.9.13-final-0 -----------
+Coverage HTML written to dir htmlcov
 
-    def test_getResponse_none_values(self):
-        mock_resp = MagicMock()
-        mock_resp.__dict__ = {"key1": None, "key2": "value"}
-        self.handler.setResponse(mock_resp)
-        response = self.handler.getResponse()
-        self.assertEqual(response.status_code, 200)
-
-    def test_getResponse_with_channel_info(self):
-        mock_resp = MagicMock()
-        mock_resp.__dict__ = {
-            "key1": "value1",
-            "key2": 123,
-            "channelname": "test",
-            "channelurl": "http://test",
-            "list_data": [1, 2, 3],
-            "bool_data": True
-        }
-        self.handler.setResponse(mock_resp)
-        response = self.handler.getResponse()
-        self.assertEqual(response.status_code, 200)
-        self.assertNotIn("channelname", response.get_json())
-        self.assertNotIn("channelurl", response.get_json())
-
-    def test_getResponse_without_channel_info(self):
-        mock_resp = MagicMock()
-        mock_resp.__dict__ = {"key1": "value1", "key2": 123}
-        self.handler.setResponse(mock_resp)
-        response = self.handler.getResponse()
-        self.assertEqual(response.status_code, 200)
-
-    def test_setResponse_invalid_input(self):
-        with self.assertRaises(AttributeError):
-            self.handler.setResponse("invalid_input")
-
-class TestApirespBase(unittest.TestCase):
-    def setUp(self):
-        self.app = Flask(__name__)
-        self.app_context = self.app.app_context()
-        self.app_context.push()
-
-    def tearDown(self):
-        self.app_context.pop()
-
-    def test_getResponse_abstract(self):
-        with self.assertRaises(NotImplementedError):
-            apir.ApirespBase().getResponse()
-
-    def test_setResponse_abstract(self):
-        with self.assertRaises(NotImplementedError):
-            apir.ApirespBase().setResponse(None)
+================================================ short test summary info ================================================ 
+ERROR test/test_APIHome.py
+ERROR test/test_db.py
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Interrupted: 2 errors during collection !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
+============================================= 8 warnings, 2 errors in 3.15s ============================================= 
