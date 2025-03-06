@@ -1,27 +1,106 @@
-from abc import ABC, abstractmethod
-from flask import jsonify
+import unittest
+from unittest.mock import MagicMock
+from flask import Flask, jsonify
 
-class ApirespBase(ABC):
-    def __init__(self):
-        self._respjson = None
+import Services.APIResponse as apir
 
-    @abstractmethod
-    def setResponse(self,resp=None):
-      raise NotImplementedError
+class TestApirespHandler(unittest.TestCase):
+    def setUp(self):
+        self.app = Flask(__name__)
+        self.app_context = self.app.app_context()
+        self.app_context.push()
+        self.handler = apir.ApirespHandler()
 
-    @abstractmethod
-    def getResponse(self):
-      raise NotImplementedError
+    def tearDown(self):
+        self.app_context.pop()
 
-class ApirespHandler(ApirespBase):
-    def __init__(self):
-        super().__init__()
+    def test_getResponse_empty_resp(self):
+        mock_resp = MagicMock()
+        mock_resp.__dict__ = {}
+        self.handler.setResponse(mock_resp)
+        response = self.handler.getResponse()
+        self.assertEqual(response.status_code, 200)
 
-    def setResponse(self,resp=None):    
-        self._respjson = resp
+    def test_getResponse_invalid_json(self):
+        class NonSerializable:
+            pass
 
-    def getResponse(self):    
-        respdict = self._respjson.__dict__
-        respdict.pop("channelname",None)
-        respdict.pop("channelurl",None)
-        return jsonify(respdict)
+        mock_resp = MagicMock()
+        mock_resp.__dict__ = {"key": NonSerializable()}
+        self.handler.setResponse(mock_resp)
+        with self.assertRaises(TypeError):
+            self.handler.getResponse()
+
+    def test_getResponse_nested_data(self):
+        mock_resp = MagicMock()
+        mock_resp.__dict__ = {
+            "key1": {"nested_key": "value"},
+            "key2": [1, 2, {"nested_key": "value"}]
+        }
+        self.handler.setResponse(mock_resp)
+        response = self.handler.getResponse()
+        self.assertEqual(response.status_code, 200)
+
+    def test_getResponse_no_dict(self):
+        self.handler.setResponse(None)
+        response = self.handler.getResponse()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get_json(), {})
+
+    def test_getResponse_non_string_keys(self):
+        mock_resp = MagicMock()
+        mock_resp.__dict__ = {123: "value"}
+        self.handler.setResponse(mock_resp)
+        response = self.handler.getResponse()
+        self.assertEqual(response.status_code, 200)
+
+    def test_getResponse_none_values(self):
+        mock_resp = MagicMock()
+        mock_resp.__dict__ = {"key1": None, "key2": "value"}
+        self.handler.setResponse(mock_resp)
+        response = self.handler.getResponse()
+        self.assertEqual(response.status_code, 200)
+
+    def test_getResponse_with_channel_info(self):
+        mock_resp = MagicMock()
+        mock_resp.__dict__ = {
+            "key1": "value1",
+            "key2": 123,
+            "channelname": "test",
+            "channelurl": "http://test",
+            "list_data": [1, 2, 3],
+            "bool_data": True
+        }
+        self.handler.setResponse(mock_resp)
+        response = self.handler.getResponse()
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn("channelname", response.get_json())
+        self.assertNotIn("channelurl", response.get_json())
+
+    def test_getResponse_without_channel_info(self):
+        mock_resp = MagicMock()
+        mock_resp.__dict__ = {"key1": "value1", "key2": 123}
+        self.handler.setResponse(mock_resp)
+        response = self.handler.getResponse()
+        self.assertEqual(response.status_code, 200)
+
+    def test_setResponse_invalid_input(self):
+        with self.assertRaises(AttributeError):
+            self.handler.setResponse("invalid_input")
+
+class TestApirespBase(unittest.TestCase):
+    def setUp(self):
+        self.app = Flask(__name__)
+        self.app_context = self.app.app_context()
+        self.app_context.push()
+
+    def tearDown(self):
+        self.app_context.pop()
+
+    def test_getResponse_abstract(self):
+        with self.assertRaises(NotImplementedError):
+            apir.ApirespBase().getResponse()
+
+    def test_setResponse_abstract(self):
+        with self.assertRaises(NotImplementedError):
+            apir.ApirespBase().setResponse(None)
