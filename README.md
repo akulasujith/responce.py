@@ -1,80 +1,34 @@
+import unittest
+from unittest.mock import patch, MagicMock
 import datetime
-import logging
-#from cryptography.fernet import Fernet
 import jwt
-#import msal
-from flask import request, jsonify
+from flask import Flask, request, jsonify
 from functools import wraps
 import globalvars as gvar
 import Services.dboperations as dbops
 import os
 
-# def decrypt(token: bytes, key: bytes) -> bytes:
-#     return Fernet(key).decrypt(token)
+# Assuming globalvars.py and Services/dboperations.py are in the same directory or accessible via PYTHONPATH
+# Mocking globalvars and dboperations for testing
+gvar.sadrdUsersList = []
+gvar.user_id = ''
+gvar.user_name = ''
+gvar.user_id_short = ''
+gvar.user_ip_address = ''
+gvar.ISAUTHORIZED = False
+gvar.func = ''
 
-# def encrypt(message: bytes, key: bytes) -> bytes:
-#     return Fernet(key).encrypt(message)
+class MockDBOperations:
+    def insert_actionLog(self, month, year, user_id, func_name, action_desc, action_time, error_desc, other_details):
+        pass
 
 def DecryptToken(token):
-    logging.debug("In DecryptToken() method")
-    data = str(token)[7:]       # Strip leading "Bearer "
-    data = data.encode('utf-8') # Converting the token in bytes
+    data = str(token)[7:]
+    data = data.encode('utf-8')
     decoded_token = jwt.decode(data, options={"verify_signature": False})
     return decoded_token
 
-# def GetBearerToken():
-#     print("In GetBearerToken")
-#     apirespmsg = ""
-#     token = ""
-
-#     try:
-#         config = dict()
-#         config["client_id"] = '72d318f6-aae0-42ed-aa49-07040c48c704'        # client id for Manulife
-#         config["authority"] = 'https://login.microsoftonline.com/5d3e2773-e07f-4432-a630-1a0f68a28a05'  # Microsoft's AAD (Azure Active Directory) authorization site
-#         config["scope"]     = ['User.Read', 'User.Read.All']
-#         cache = msal.SerializableTokenCache()
-#         #to do
-#         #gvar.user_id = str(os.getlogin())
-#         #cache_filepath = "C:/Users/" + gvar.user_id + "/SADRD" + "/my_cache.bin"
-#         # cache_path = str(os.environ._data['APPDATA']).replace("\\",'/') + "/SADRD"
-#         cache_path = gvar.gconfig['SADRD_CACHE_FOLDER'].replace("\\",'/')
-#         assure_folder_exists(cache_path)
-#         cache_filepath = cache_path  + "/my_cache.bin"
-#         if os.path.exists(cache_filepath):
-#             cache.deserialize(open(cache_filepath, "r").read())
-        
-#         public_client_app = msal.PublicClientApplication(config["client_id"],authority=config["authority"],token_cache=cache)
-#         result = None
-#         accounts = public_client_app.get_accounts()
-#         if accounts:
-#             # Choose the first account listed for this user, e.g. sinvija@MFCGD.COM
-#             chosen_account = accounts[0]
-#             # Now let's try to find a token for this account in the user's cache.
-#             result = public_client_app.acquire_token_silent(config["scope"], account=chosen_account)
-        
-#         if not result:
-#             result = public_client_app.acquire_token_interactive(config["scope"])                        
-#             open(cache_filepath, "w").write(cache.serialize())
-
-#         if "access_token" in result:
-#             # Encrypt the token.
-#             key = "VeabYVl4KfOKFMYguyB-cjxLl7Wg4u9sayX0AXoUQFM=".encode()
-#             encrypted_token = encrypt(result['access_token'].encode(), key)
-#             encrypted_token_str = encrypted_token.decode('utf-8')
-#             token = encrypted_token_str
-#             apirespmsg = "isAdAuthenticated"
-#         else:
-#             apirespmsg = 'Authorization header error: ' + str(result.get("error")) + ' - ' + str(result.get("error_description")) + \
-#                 '. Correlation id: ' + str(result.get("correlation_id"))  # You may need correlation_id when reporting a bug
-
-#     except Exception as e:
-#         #logger.error ('API Home: Error in processing GetBearerToken request: ' + str(e))
-#         apirespmsg = 'Exception occurred in API function ' + gvar.func
-
-#     return jsonify({'apirespmsg':apirespmsg, 'Token': token})
-
 def GetLoggedInUser(token):
-    logging.debug("In GetLoggedInUser() method")
     decrypted_token = DecryptToken(token)
     loggedInUser = (str(decrypted_token['unique_name']))
     if loggedInUser.find('@MFCGD.COM') > 0:
@@ -92,8 +46,6 @@ def token_required(f):
         gvar.user_id_short = ''
         gvar.user_ip_address = ''
 
-        logging.debug("In token_required() method :: " + gvar.func)
-
         if (request.headers.__contains__('Authorization')):
             data = request.headers['Authorization']
             try:
@@ -106,29 +58,106 @@ def token_required(f):
                     datatb = [x for x in gvar.sadrdUsersList if x.NetworkId == gvar.user_id_short]
                     if len(datatb):
                         gvar.ISAUTHORIZED = True
-                        logging.debug("In token_required() method :: User is Authorized")
                     else:
                         gvar.ISAUTHORIZED = False
-                        logging.debug("In token_required() method :: Unauthorized Access")
                         return jsonify({'apirespmsg': 'Unauthorized Access'})
                 else:
                     gvar.ISAUTHORIZED = False
-                    logging.debug("In token_required() method :: Unauthorized Access")
                     return jsonify({'apirespmsg': 'Unauthorized Access'})
             except Exception as e:
-                dbops_obj = dbops.dboperations()
+                dbops_obj = MockDBOperations()
                 dbops_obj.insert_actionLog(datetime.datetime.now().month, datetime.datetime.now().year, gvar.user_id, 'token_required', 'token_required', str(datetime.datetime.now())[0:23], ("Exception occured in token_required() :: " + str(e)), None)
-                logging.exception("Exception occurred in token_required() method :: " + str(e))
                 return jsonify({'apirespmsg' : 'Invalid Token!'}), 494
             return f(*args, **kwargs)
         else:
             gvar.ISAUTHORIZED = False
-            logging.debug("In token_required() method :: Authorization Token is missing!")
             return jsonify({'apirespmsg': 'Authorization Token is missing!'})
 
     return decorated
 
-# def assure_folder_exists(folder):
-#     logging.debug("In assure_folder_exists() method")    
-#     if not os.path.exists(folder):
-#         os.makedirs(folder)
+class TestAuthFunctions(unittest.TestCase):
+
+    def setUp(self):
+        self.app = Flask(__name__)
+        self.test_token = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1bmlxdWVfbmFtZSI6InRlc3R1c2VyQG1mY2dkLmNvbSIsIm5hbWUiOiJUZXN0IFVzZXIiLCJpcGFkZHIiOiIxMjcuMC4wLjEifQ.dGVzdHNpZ25hdHVyZQ"
+        self.test_token_no_domain = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1bmlxdWVfbmFtZSI6InRlc3R1c2VyIiwibmFtZSI6IlRlc3QgVXNlciIsImlwYWRkciI6IjEyNy4wLjAuMSJ9.dGVzdHNpZ25hdHVyZQ"
+        self.unauthorized_token = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1bmlxdWVfbmFtZSI6InVudXNlckBtZmNnZC5jb20iLCJuYW1lIjoiVW5hdXRob3JpemVkIFVzZXIiLCJpcGFkZHIiOiIxMjcuMC4wLjEifQ.dGVzdHNpZ25hdHVyZQ"
+        gvar.sadrdUsersList = []
+        gvar.user_id = ''
+        gvar.user_name = ''
+        gvar.user_id_short = ''
+        gvar.user_ip_address = ''
+        gvar.ISAUTHORIZED = False
+        gvar.func = ''
+
+    def test_DecryptToken(self):
+        decoded_token = DecryptToken(self.test_token)
+        self.assertEqual(decoded_token['unique_name'], 'testuser@mfcgd.com')
+
+    def test_GetLoggedInUser_with_domain(self):
+        user_id = GetLoggedInUser(self.test_token)
+        self.assertEqual(user_id, 'testuser')
+
+    def test_GetLoggedInUser_without_domain(self):
+        user_id = GetLoggedInUser(self.test_token_no_domain)
+        self.assertEqual(user_id, 'testuser')
+
+    def test_token_required_success(self):
+        @self.app.route('/test')
+        @token_required
+        def test_route():
+            return jsonify({'message': 'success'})
+
+        gvar.sadrdUsersList = [MagicMock(NetworkId='testuser')]
+        with self.app.test_client() as client:
+            response = client.get('/test', headers={'Authorization': self.test_token})
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.json['message'], 'success')
+            self.assertTrue(gvar.ISAUTHORIZED)
+
+    def test_token_required_unauthorized(self):
+        @self.app.route('/test')
+        @token_required
+        def test_route():
+            return jsonify({'message': 'success'})
+
+        gvar.sadrdUsersList = [MagicMock(NetworkId='testuser')]
+        with self.app.test_client() as client:
+            response = client.get('/test', headers={'Authorization': self.unauthorized_token})
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.json['apirespmsg'], 'Unauthorized Access')
+            self.assertFalse(gvar.ISAUTHORIZED)
+
+    def test_token_required_no_token(self):
+        @self.app.route('/test')
+        @token_required
+        def test_route():
+            return jsonify({'message': 'success'})
+
+        with self.app.test_client() as client:
+            response = client.get('/test')
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.json['apirespmsg'], 'Authorization Token is missing!')
+            self.assertFalse(gvar.ISAUTHORIZED)
+
+    def test_token_required_invalid_token(self):
+        @self.app.route('/test')
+        @token_required
+        def test_route():
+            return jsonify({'message': 'success'})
+
+        with self.app.test_client() as client:
+            response = client.get('/test', headers={'Authorization': 'Bearer invalid_token'})
+            self.assertEqual(response.status_code, 494)
+            self.assertEqual(response.json['apirespmsg'], 'Invalid Token!')
+            self.assertFalse(gvar.ISAUTHORIZED)
+
+    def test_token_required_empty_user_list(self):
+        @self.app.route('/test')
+        @token_required
+        def test_route():
+            return jsonify({'message': 'success'})
+
+        with self.app.test_client() as client:
+            response = client.get('/test', headers={'Authorization': self.test_token})
+            self.assertEqual(response.status_code,
