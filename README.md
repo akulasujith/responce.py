@@ -1,163 +1,378 @@
-import unittest
-from unittest.mock import patch, MagicMock
-import datetime
-import jwt
-from flask import Flask, request, jsonify
-from functools import wraps
-import globalvars as gvar
-import Services.dboperations as dbops
-import os
+pytest --cov . test/ --cov-report html
+================================================== test session starts ==================================================
+platform win32 -- Python 3.9.13, pytest-7.2.0, pluggy-1.5.0
+rootdir: C:\Sujith\Projects\SADRD\FinanceIT_SADRD\API
+plugins: Flask-Dance-3.2.0, cov-4.0.0
+collected 82 items
 
-# Assuming globalvars.py and Services/dboperations.py are in the same directory or accessible via PYTHONPATH
-# Mocking globalvars and dboperations for testing
-gvar.sadrdUsersList = []
-gvar.user_id = ''
-gvar.user_name = ''
-gvar.user_id_short = ''
-gvar.user_ip_address = ''
-gvar.ISAUTHORIZED = False
-gvar.func = ''
+test\test_APIHome.py .........                                                                                     [ 10%]
+test\test_config.py .....................                                                                          [ 36%]
+test\test_db.py .                                                                                                  [ 37%] 
+test\test_globalvars.py .                                                                                          [ 39%]
+test\Entities\test_Customentities.py ....                                                                          [ 43%]
+test\Entities\test_dbormschemas.py .........                                                                       [ 54%]
+test\Services\test_APIResponse.py FFFFF.FFF.FFF                                                                    [ 70%]
+test\Services\test_Auth.py ....                                                                                    [ 75%]
+test\Services\test_CustomException.py ..                                                                           [ 78%] 
+test\Services\test_dboperations.py ...........                                                                     [ 91%]
+test\Services\test_fileoperations.py ....                                                                          [ 96%]
+test\Services\test_logoperations.py .                                                                              [ 97%] 
+test\Services\test_parentparser.py ..                                                                              [100%]
 
-class MockDBOperations:
-    def insert_actionLog(self, month, year, user_id, func_name, action_desc, action_time, error_desc, other_details):
-        pass
+======================================================= FAILURES ======================================================== 
+____________________________________ TestApirespHandler.test_getResponse_empty_resp _____________________________________ 
 
-def DecryptToken(token):
-    data = str(token)[7:]
-    data = data.encode('utf-8')
-    decoded_token = jwt.decode(data, options={"verify_signature": False})
-    return decoded_token
+self = <test.Services.test_APIResponse.TestApirespHandler testMethod=test_getResponse_empty_resp>
 
-def GetLoggedInUser(token):
-    decrypted_token = DecryptToken(token)
-    loggedInUser = (str(decrypted_token['unique_name']))
-    if loggedInUser.find('@MFCGD.COM') > 0:
-        gvar.user_id = loggedInUser[0:loggedInUser.find('@MFCGD.COM')]
-    else:
-        gvar.user_id = loggedInUser
-    return gvar.user_id
+    def test_getResponse_empty_resp(self):
+        mock_resp = MagicMock()
+        mock_resp.__dict__ = {}
+        self.handler.setResponse(mock_resp)
+>       response = self.handler.getResponse()
 
-def token_required(f):
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        gvar.func = f.__name__
-        gvar.user_id = ''
-        gvar.user_name = ''
-        gvar.user_id_short = ''
-        gvar.user_ip_address = ''
+test\Services\test_APIResponse.py:52:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Services\APIResponse.py:27: in getResponse
+    return jsonify(respdict)
+venv\lib\site-packages\flask\json\__init__.py:342: in jsonify
+    return current_app.json.response(*args, **kwargs)
+venv\lib\site-packages\werkzeug\local.py:318: in __get__
+    obj = instance._get_current_object()
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
 
-        if (request.headers.__contains__('Authorization')):
-            data = request.headers['Authorization']
-            try:
-                decrypted_token = DecryptToken(data)    
-                gvar.user_id_short = GetLoggedInUser(data)
-                gvar.user_name = str(decrypted_token['name'])
-                gvar.user_ip_address = str(decrypted_token['ipaddr'])
-                
-                if len(gvar.sadrdUsersList):
-                    datatb = [x for x in gvar.sadrdUsersList if x.NetworkId == gvar.user_id_short]
-                    if len(datatb):
-                        gvar.ISAUTHORIZED = True
-                    else:
-                        gvar.ISAUTHORIZED = False
-                        return jsonify({'apirespmsg': 'Unauthorized Access'})
-                else:
-                    gvar.ISAUTHORIZED = False
-                    return jsonify({'apirespmsg': 'Unauthorized Access'})
-            except Exception as e:
-                dbops_obj = MockDBOperations()
-                dbops_obj.insert_actionLog(datetime.datetime.now().month, datetime.datetime.now().year, gvar.user_id, 'token_required', 'token_required', str(datetime.datetime.now())[0:23], ("Exception occured in token_required() :: " + str(e)), None)
-                return jsonify({'apirespmsg' : 'Invalid Token!'}), 494
-            return f(*args, **kwargs)
-        else:
-            gvar.ISAUTHORIZED = False
-            return jsonify({'apirespmsg': 'Authorization Token is missing!'})
+    def _get_current_object() -> T:
+        try:
+            obj = local.get()
+        except LookupError:
+>           raise RuntimeError(unbound_message) from None
+E           RuntimeError: Working outside of application context.
+E
+E           This typically means that you attempted to use functionality that needed
+E           the current application. To solve this, set up an application context
+E           with app.app_context(). See the documentation for more information.
 
-    return decorated
+venv\lib\site-packages\werkzeug\local.py:519: RuntimeError
+___________________________________ TestApirespHandler.test_getResponse_invalid_json ____________________________________ 
 
-class TestAuthFunctions(unittest.TestCase):
+self = <test.Services.test_APIResponse.TestApirespHandler testMethod=test_getResponse_invalid_json>
 
-    def setUp(self):
-        self.app = Flask(__name__)
-        self.test_token = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1bmlxdWVfbmFtZSI6InRlc3R1c2VyQG1mY2dkLmNvbSIsIm5hbWUiOiJUZXN0IFVzZXIiLCJpcGFkZHIiOiIxMjcuMC4wLjEifQ.dGVzdHNpZ25hdHVyZQ"
-        self.test_token_no_domain = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1bmlxdWVfbmFtZSI6InRlc3R1c2VyIiwibmFtZSI6IlRlc3QgVXNlciIsImlwYWRkciI6IjEyNy4wLjAuMSJ9.dGVzdHNpZ25hdHVyZQ"
-        self.unauthorized_token = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1bmlxdWVfbmFtZSI6InVudXNlckBtZmNnZC5jb20iLCJuYW1lIjoiVW5hdXRob3JpemVkIFVzZXIiLCJpcGFkZHIiOiIxMjcuMC4wLjEifQ.dGVzdHNpZ25hdHVyZQ"
-        gvar.sadrdUsersList = []
-        gvar.user_id = ''
-        gvar.user_name = ''
-        gvar.user_id_short = ''
-        gvar.user_ip_address = ''
-        gvar.ISAUTHORIZED = False
-        gvar.func = ''
+    def test_getResponse_invalid_json(self):
+        class NonSerializable:
+            pass
 
-    def test_DecryptToken(self):
-        decoded_token = DecryptToken(self.test_token)
-        self.assertEqual(decoded_token['unique_name'], 'testuser@mfcgd.com')
+        mock_resp = MagicMock()
+        mock_resp.__dict__ = {"key": NonSerializable()}
+        self.handler.setResponse(mock_resp)
+        with self.assertRaises(TypeError):
+>           self.handler.getResponse()
 
-    def test_GetLoggedInUser_with_domain(self):
-        user_id = GetLoggedInUser(self.test_token)
-        self.assertEqual(user_id, 'testuser')
+test\Services\test_APIResponse.py:76:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Services\APIResponse.py:27: in getResponse
+    return jsonify(respdict)
+venv\lib\site-packages\flask\json\__init__.py:342: in jsonify
+    return current_app.json.response(*args, **kwargs)
+venv\lib\site-packages\werkzeug\local.py:318: in __get__
+    obj = instance._get_current_object()
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
 
-    def test_GetLoggedInUser_without_domain(self):
-        user_id = GetLoggedInUser(self.test_token_no_domain)
-        self.assertEqual(user_id, 'testuser')
+    def _get_current_object() -> T:
+        try:
+            obj = local.get()
+        except LookupError:
+>           raise RuntimeError(unbound_message) from None
+E           RuntimeError: Working outside of application context.
+E
+E           This typically means that you attempted to use functionality that needed
+E           the current application. To solve this, set up an application context
+E           with app.app_context(). See the documentation for more information.
 
-    def test_token_required_success(self):
-        @self.app.route('/test')
-        @token_required
-        def test_route():
-            return jsonify({'message': 'success'})
+venv\lib\site-packages\werkzeug\local.py:519: RuntimeError
+____________________________________ TestApirespHandler.test_getResponse_nested_data ____________________________________ 
 
-        gvar.sadrdUsersList = [MagicMock(NetworkId='testuser')]
-        with self.app.test_client() as client:
-            response = client.get('/test', headers={'Authorization': self.test_token})
-            self.assertEqual(response.status_code, 200)
-            self.assertEqual(response.json['message'], 'success')
-            self.assertTrue(gvar.ISAUTHORIZED)
+self = <test.Services.test_APIResponse.TestApirespHandler testMethod=test_getResponse_nested_data>
 
-    def test_token_required_unauthorized(self):
-        @self.app.route('/test')
-        @token_required
-        def test_route():
-            return jsonify({'message': 'success'})
+    def test_getResponse_nested_data(self):
+        mock_resp = MagicMock()
+        mock_resp.__dict__ = {
+            "key1": {"nested_key": "value"},
+            "key2": [1, 2, {"nested_key": "value"}]
+        }
+        self.handler.setResponse(mock_resp)
+>       response = self.handler.getResponse()
 
-        gvar.sadrdUsersList = [MagicMock(NetworkId='testuser')]
-        with self.app.test_client() as client:
-            response = client.get('/test', headers={'Authorization': self.unauthorized_token})
-            self.assertEqual(response.status_code, 200)
-            self.assertEqual(response.json['apirespmsg'], 'Unauthorized Access')
-            self.assertFalse(gvar.ISAUTHORIZED)
+test\Services\test_APIResponse.py:85:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Services\APIResponse.py:27: in getResponse
+    return jsonify(respdict)
+venv\lib\site-packages\flask\json\__init__.py:342: in jsonify
+    return current_app.json.response(*args, **kwargs)
+venv\lib\site-packages\werkzeug\local.py:318: in __get__
+    obj = instance._get_current_object()
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
 
-    def test_token_required_no_token(self):
-        @self.app.route('/test')
-        @token_required
-        def test_route():
-            return jsonify({'message': 'success'})
+    def _get_current_object() -> T:
+        try:
+            obj = local.get()
+        except LookupError:
+>           raise RuntimeError(unbound_message) from None
+E           RuntimeError: Working outside of application context.
+E
+E           This typically means that you attempted to use functionality that needed
+E           the current application. To solve this, set up an application context
+E           with app.app_context(). See the documentation for more information.
 
-        with self.app.test_client() as client:
-            response = client.get('/test')
-            self.assertEqual(response.status_code, 200)
-            self.assertEqual(response.json['apirespmsg'], 'Authorization Token is missing!')
-            self.assertFalse(gvar.ISAUTHORIZED)
+venv\lib\site-packages\werkzeug\local.py:519: RuntimeError
+______________________________________ TestApirespHandler.test_getResponse_no_dict ______________________________________ 
 
-    def test_token_required_invalid_token(self):
-        @self.app.route('/test')
-        @token_required
-        def test_route():
-            return jsonify({'message': 'success'})
+self = <test.Services.test_APIResponse.TestApirespHandler testMethod=test_getResponse_no_dict>
 
-        with self.app.test_client() as client:
-            response = client.get('/test', headers={'Authorization': 'Bearer invalid_token'})
-            self.assertEqual(response.status_code, 494)
-            self.assertEqual(response.json['apirespmsg'], 'Invalid Token!')
-            self.assertFalse(gvar.ISAUTHORIZED)
+    def test_getResponse_no_dict(self):
+        mock_resp = MagicMock()
+        del mock_resp.__dict__  # Simulate a response without __dict__
+        self.handler.setResponse(mock_resp)
+        with self.assertRaises(AttributeError):
+>           self.handler.getResponse()
 
-    def test_token_required_empty_user_list(self):
-        @self.app.route('/test')
-        @token_required
-        def test_route():
-            return jsonify({'message': 'success'})
+test\Services\test_APIResponse.py:66:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Services\APIResponse.py:27: in getResponse
+    return jsonify(respdict)
+venv\lib\site-packages\flask\json\__init__.py:342: in jsonify
+    return current_app.json.response(*args, **kwargs)
+venv\lib\site-packages\werkzeug\local.py:318: in __get__
+    obj = instance._get_current_object()
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
 
-        with self.app.test_client() as client:
-            response = client.get('/test', headers={'Authorization': self.test_token})
-            self.assertEqual(response.status_code,
+    def _get_current_object() -> T:
+        try:
+            obj = local.get()
+        except LookupError:
+>           raise RuntimeError(unbound_message) from None
+E           RuntimeError: Working outside of application context.
+E
+E           This typically means that you attempted to use functionality that needed
+E           the current application. To solve this, set up an application context
+E           with app.app_context(). See the documentation for more information.
+
+venv\lib\site-packages\werkzeug\local.py:519: RuntimeError
+__________________________________ TestApirespHandler.test_getResponse_non_string_keys __________________________________ 
+
+self = <test.Services.test_APIResponse.TestApirespHandler testMethod=test_getResponse_non_string_keys>
+
+    def test_getResponse_non_string_keys(self):
+        mock_resp = MagicMock()
+        mock_resp.__dict__ = {123: "value"}
+        self.handler.setResponse(mock_resp)
+>       response = self.handler.getResponse()
+
+test\Services\test_APIResponse.py:94:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Services\APIResponse.py:27: in getResponse
+    return jsonify(respdict)
+venv\lib\site-packages\flask\json\__init__.py:342: in jsonify
+    return current_app.json.response(*args, **kwargs)
+venv\lib\site-packages\werkzeug\local.py:318: in __get__
+    obj = instance._get_current_object()
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def _get_current_object() -> T:
+        try:
+            obj = local.get()
+        except LookupError:
+>           raise RuntimeError(unbound_message) from None
+E           RuntimeError: Working outside of application context.
+E
+E           This typically means that you attempted to use functionality that needed
+E           the current application. To solve this, set up an application context
+E           with app.app_context(). See the documentation for more information.
+
+venv\lib\site-packages\werkzeug\local.py:519: RuntimeError
+____________________________________ TestApirespHandler.test_getResponse_none_values ____________________________________ 
+
+self = <test.Services.test_APIResponse.TestApirespHandler testMethod=test_getResponse_none_values>
+
+    def test_getResponse_none_values(self):
+        mock_resp = MagicMock()
+        mock_resp.__dict__ = {"key1": None, "key2": "value"}
+        self.handler.setResponse(mock_resp)
+>       response = self.handler.getResponse()
+
+test\Services\test_APIResponse.py:102:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Services\APIResponse.py:27: in getResponse
+    return jsonify(respdict)
+venv\lib\site-packages\flask\json\__init__.py:342: in jsonify
+    return current_app.json.response(*args, **kwargs)
+venv\lib\site-packages\werkzeug\local.py:318: in __get__
+    obj = instance._get_current_object()
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def _get_current_object() -> T:
+        try:
+            obj = local.get()
+        except LookupError:
+>           raise RuntimeError(unbound_message) from None
+E           RuntimeError: Working outside of application context.
+E
+E           This typically means that you attempted to use functionality that needed
+E           the current application. To solve this, set up an application context
+E           with app.app_context(). See the documentation for more information.
+
+venv\lib\site-packages\werkzeug\local.py:519: RuntimeError
+_________________________________ TestApirespHandler.test_getResponse_with_channel_info _________________________________ 
+
+self = <test.Services.test_APIResponse.TestApirespHandler testMethod=test_getResponse_with_channel_info>
+
+    def test_getResponse_with_channel_info(self):
+        mock_resp = MagicMock()
+        mock_resp.__dict__ = {
+            "key1": "value1",
+            "key2": 123,
+            "channelname": "test",
+            "channelurl": "http://test",
+            "list_data": [1, 2, 3],
+            "bool_data": True
+        }
+        self.handler.setResponse(mock_resp)
+>       response = self.handler.getResponse()
+
+test\Services\test_APIResponse.py:30:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Services\APIResponse.py:27: in getResponse
+    return jsonify(respdict)
+venv\lib\site-packages\flask\json\__init__.py:342: in jsonify
+    return current_app.json.response(*args, **kwargs)
+venv\lib\site-packages\werkzeug\local.py:318: in __get__
+    obj = instance._get_current_object()
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def _get_current_object() -> T:
+        try:
+            obj = local.get()
+        except LookupError:
+>           raise RuntimeError(unbound_message) from None
+E           RuntimeError: Working outside of application context.
+E
+E           This typically means that you attempted to use functionality that needed
+E           the current application. To solve this, set up an application context
+E           with app.app_context(). See the documentation for more information.
+
+venv\lib\site-packages\werkzeug\local.py:519: RuntimeError
+_______________________________ TestApirespHandler.test_getResponse_without_channel_info ________________________________ 
+
+self = <test.Services.test_APIResponse.TestApirespHandler testMethod=test_getResponse_without_channel_info>
+
+    def test_getResponse_without_channel_info(self):
+        mock_resp = MagicMock()
+        mock_resp.__dict__ = {"key1": "value1", "key2": 123}
+        self.handler.setResponse(mock_resp)
+>       response = self.handler.getResponse()
+
+test\Services\test_APIResponse.py:43:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+Services\APIResponse.py:27: in getResponse
+    return jsonify(respdict)
+venv\lib\site-packages\flask\json\__init__.py:342: in jsonify
+    return current_app.json.response(*args, **kwargs)
+venv\lib\site-packages\werkzeug\local.py:318: in __get__
+    obj = instance._get_current_object()
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def _get_current_object() -> T:
+        try:
+            obj = local.get()
+        except LookupError:
+>           raise RuntimeError(unbound_message) from None
+E           RuntimeError: Working outside of application context.
+E
+E           This typically means that you attempted to use functionality that needed
+E           the current application. To solve this, set up an application context
+E           with app.app_context(). See the documentation for more information.
+
+venv\lib\site-packages\werkzeug\local.py:519: RuntimeError
+___________________________________ TestApirespHandler.test_setResponse_invalid_input ___________________________________
+
+self = <test.Services.test_APIResponse.TestApirespHandler testMethod=test_setResponse_invalid_input>
+
+    def test_setResponse_invalid_input(self):
+        with self.assertRaises(TypeError):
+>           self.handler.setResponse("invalid_input")
+E           AssertionError: TypeError not raised
+
+test\Services\test_APIResponse.py:17: AssertionError
+___________________________________________ TestApirespBase.test_getResponse ____________________________________________ 
+
+self = <test.Services.test_APIResponse.TestApirespBase testMethod=test_getResponse>
+
+    def test_getResponse(self):
+        #base = apir.ApirespBase()
+        with self.assertRaises(NotImplementedError):
+>           base.getResponse()
+E           NameError: name 'base' is not defined
+
+test\Services\test_APIResponse.py:116: NameError
+___________________________________________ TestApirespBase.test_setResponse ____________________________________________ 
+
+self = <test.Services.test_APIResponse.TestApirespBase testMethod=test_setResponse>
+
+    def test_setResponse(self):
+        #base = apir.ApirespBase()
+        with self.assertRaises(NotImplementedError):
+>           base.setResponse()
+E           NameError: name 'base' is not defined
+
+test\Services\test_APIResponse.py:111: NameError
+=================================================== warnings summary ==================================================== 
+venv\lib\site-packages\pandas\compat\numpy\__init__.py:10
+  C:\Sujith\Projects\SADRD\FinanceIT_SADRD\API\venv\lib\site-packages\pandas\compat\numpy\__init__.py:10: DeprecationWarning: distutils Version classes are deprecated. Use packaging.version instead.
+    _nlv = LooseVersion(_np_version)
+
+venv\lib\site-packages\pandas\compat\numpy\__init__.py:11
+  C:\Sujith\Projects\SADRD\FinanceIT_SADRD\API\venv\lib\site-packages\pandas\compat\numpy\__init__.py:11: DeprecationWarning: distutils Version classes are deprecated. Use packaging.version instead.
+    np_version_under1p17 = _nlv < LooseVersion("1.17")
+
+venv\lib\site-packages\pandas\compat\numpy\__init__.py:12
+  C:\Sujith\Projects\SADRD\FinanceIT_SADRD\API\venv\lib\site-packages\pandas\compat\numpy\__init__.py:12: DeprecationWarning: distutils Version classes are deprecated. Use packaging.version instead.
+    np_version_under1p18 = _nlv < LooseVersion("1.18")
+
+venv\lib\site-packages\pandas\compat\numpy\__init__.py:13
+  C:\Sujith\Projects\SADRD\FinanceIT_SADRD\API\venv\lib\site-packages\pandas\compat\numpy\__init__.py:13: DeprecationWarning: distutils Version classes are deprecated. Use packaging.version instead.
+    _np_version_under1p19 = _nlv < LooseVersion("1.19")
+
+venv\lib\site-packages\pandas\compat\numpy\__init__.py:14
+  C:\Sujith\Projects\SADRD\FinanceIT_SADRD\API\venv\lib\site-packages\pandas\compat\numpy\__init__.py:14: DeprecationWarning: distutils Version classes are deprecated. Use packaging.version instead.
+    _np_version_under1p20 = _nlv < LooseVersion("1.20")
+
+venv\lib\site-packages\setuptools\_distutils\version.py:337
+  C:\Sujith\Projects\SADRD\FinanceIT_SADRD\API\venv\lib\site-packages\setuptools\_distutils\version.py:337: DeprecationWarning: distutils Version classes are deprecated. Use packaging.version instead.
+    other = LooseVersion(other)
+
+venv\lib\site-packages\pandas\compat\numpy\function.py:120
+venv\lib\site-packages\pandas\compat\numpy\function.py:120
+  C:\Sujith\Projects\SADRD\FinanceIT_SADRD\API\venv\lib\site-packages\pandas\compat\numpy\function.py:120: DeprecationWarning: distutils Version classes are deprecated. Use packaging.version instead.
+    if LooseVersion(__version__) >= LooseVersion("1.17.0"):
+
+venv\lib\site-packages\flask_sqlalchemy\__init__.py:14
+venv\lib\site-packages\flask_sqlalchemy\__init__.py:14
+  C:\Sujith\Projects\SADRD\FinanceIT_SADRD\API\venv\lib\site-packages\flask_sqlalchemy\__init__.py:14: DeprecationWarning: '_app_ctx_stack' is deprecated and will be removed in Flask 2.3.
+    from flask import _app_ctx_stack, abort, current_app, request
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+
+---------- coverage: platform win32, python 3.9.13-final-0 -----------
+Coverage HTML written to dir htmlcov
+
+================================================ short test summary info ================================================ 
+FAILED test/Services/test_APIResponse.py::TestApirespHandler::test_getResponse_empty_resp - RuntimeError: Working outside of application context.
+FAILED test/Services/test_APIResponse.py::TestApirespHandler::test_getResponse_invalid_json - RuntimeError: Working outside of application context.
+FAILED test/Services/test_APIResponse.py::TestApirespHandler::test_getResponse_nested_data - RuntimeError: Working outside of application context.
+FAILED test/Services/test_APIResponse.py::TestApirespHandler::test_getResponse_no_dict - RuntimeError: Working outside of application context.
+FAILED test/Services/test_APIResponse.py::TestApirespHandler::test_getResponse_non_string_keys - RuntimeError: Working outside of application context.
+FAILED test/Services/test_APIResponse.py::TestApirespHandler::test_getResponse_none_values - RuntimeError: Working outside of application context.
+FAILED test/Services/test_APIResponse.py::TestApirespHandler::test_getResponse_with_channel_info - RuntimeError: Working outside of application context.
+FAILED test/Services/test_APIResponse.py::TestApirespHandler::test_getResponse_without_channel_info - RuntimeError: Working outside of application context.
+FAILED test/Services/test_APIResponse.py::TestApirespHandler::test_setResponse_invalid_input - AssertionError: TypeError not raised
+FAILED test/Services/test_APIResponse.py::TestApirespBase::test_getResponse - NameError: name 'base' is not defined       
+FAILED test/Services/test_APIResponse.py::TestApirespBase::test_setResponse - NameError: name 'base' is not defined       
+====================================== 11 failed, 71 passed, 10 warnings in 6.16s 
