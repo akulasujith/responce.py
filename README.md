@@ -3,7 +3,7 @@ from unittest.mock import patch, MagicMock
 from flask import Flask, url_for, json
 import db
 import globalvars as gvar
-from apihome import mainapp, dbops_obj, auth, AdminAuthorize # type: ignore
+from apihome import mainapp, dbops_obj, auth, AdminAuthorize  # type: ignore
 from Entities.Customentities import ApihomeResp
 
 @pytest.fixture
@@ -26,6 +26,7 @@ def mock_auth():
         mock.token_required.return_value = lambda f: f
         yield mock
 
+@patch.dict('apihome.mainapp.config', {'ENV': 'production'})
 def test_authenticate_user_success(client, mock_dbops):
     # Mock valid user data
     mock_user = MagicMock()
@@ -45,9 +46,10 @@ def test_authenticate_user_success(client, mock_dbops):
     assert response.json['authenticated'] is True
     assert response.json['Name'] == 'Test User'
 
+@patch.dict('apihome.mainapp.config', {'ENV': 'production'})
 def test_authenticate_user_failure(client, mock_dbops):
     # Mock no users found
-    mock_dbops.GetAllUsers.return_value = []
+    mock_dbops.GetAllUsers.return_value =
     headers = {'Authorization': 'Bearer invalidtoken'}
     response = client.get('/api/AuthenticateUser', headers=headers)
     
