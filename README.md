@@ -1,8 +1,9 @@
 import pytest
 from unittest.mock import patch, MagicMock
 from flask import Flask, url_for, json
+import db
 import globalvars as gvar
-from apihome import mainapp, dbops_obj, auth, AdminAuthorize
+from apihome import mainapp, dbops_obj, auth, AdminAuthorize # type: ignore
 from Entities.Customentities import ApihomeResp
 
 @pytest.fixture
