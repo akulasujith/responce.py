@@ -1,84 +1,64 @@
 import unittest
+from Entities.Customentities import Authreq, ApihomeResp
 
 class TestAuthreq(unittest.TestCase):
+
     def test_default_initialization(self):
-        auth = Authreq()
-        self.assertTrue(auth.authenticated)
-        self.assertIsNone(auth.auth_url)
-        self.assertIsNone(auth.account)
-        self.assertIsNone(auth.parms)
-        self.assertIsNone(auth.dbsess_obj)
-        self.assertIsNone(auth.newsess_obj)
-        self.assertIsNone(auth.dbopsobj)
-        self.assertIsNone(auth.status)
+        authreq = Authreq()
+        self.assertTrue(authreq.authenticated)
+        self.assertIsNone(authreq.auth_url)
+        self.assertIsNone(authreq.account)
+        self.assertIsNone(authreq.parms)
+        self.assertIsNone(authreq.dbsess_obj)
+        self.assertIsNone(authreq.newsess_obj)
+        self.assertIsNone(authreq.dbopsobj)
+        self.assertIsNone(authreq.status)
 
-    def test_all_parameters_initialization(self):
-        test_params = {
-            'authenticated': False,
-            'auth_url': 'https://auth.example.com',
-            'account': 'test_account',
-            'parms': {'param1': 'value1'},
-            'dbsess_obj': 'db_session',
-            'newsess_obj': 'new_session',
-            'dbopsobj': 'db_operations',
-            'status': 404
-        }
-
-        auth = Authreq(**test_params)
-        self.assertFalse(auth.authenticated)
-        self.assertEqual(auth.auth_url, test_params['auth_url'])
-        self.assertEqual(auth.account, test_params['account'])
-        self.assertEqual(auth.parms, test_params['parms'])
-        self.assertEqual(auth.dbsess_obj, test_params['dbsess_obj'])
-        self.assertEqual(auth.newsess_obj, test_params['newsess_obj'])
-        self.assertEqual(auth.dbopsobj, test_params['dbopsobj'])
-        self.assertEqual(auth.status, test_params['status'])
+    def test_custom_initialization(self):
+        authreq = Authreq(authenticated=False, auth_url="http://example.com", account="account1", parms={"key": "value"},
+                          dbsess_obj="dbsess", newsess_obj="newsess", dbopsobj="dbops", status="active")
+        self.assertFalse(authreq.authenticated)
+        self.assertEqual(authreq.auth_url, "http://example.com")
+        self.assertEqual(authreq.account, "account1")
+        self.assertEqual(authreq.parms, {"key": "value"})
+        self.assertEqual(authreq.dbsess_obj, "dbsess")
+        self.assertEqual(authreq.newsess_obj, "newsess")
+        self.assertEqual(authreq.dbopsobj, "dbops")
+        self.assertEqual(authreq.status, "active")
 
 class TestApihomeResp(unittest.TestCase):
+
     def test_default_initialization(self):
-        resp = ApihomeResp()
-        self.assertIsNone(resp.useremailid)
-        self.assertIsNone(resp.username)
-        self.assertIsNone(resp.userguid)
-        self.assertIsNone(resp.channelname)
-        self.assertIsNone(resp.channelurl)
-        self.assertIsNone(resp.sharepointurl)
-        self.assertFalse(resp.isAuthorized)
-        self.assertIsNone(resp.folder)
-        self.assertIsNone(resp.exceptionFolder)
-        self.assertFalse(resp.isCopycomplete)
-        self.assertIsNone(resp.status)
-        self.assertIsNone(resp.message)
+        apihome_resp = ApihomeResp()
+        self.assertIsNone(apihome_resp.useremailid)
+        self.assertIsNone(apihome_resp.username)
+        self.assertIsNone(apihome_resp.userguid)
+        self.assertIsNone(apihome_resp.channelname)
+        self.assertIsNone(apihome_resp.channelurl)
+        self.assertIsNone(apihome_resp.sharepointurl)
+        self.assertFalse(apihome_resp.isAuthorized)
+        self.assertIsNone(apihome_resp.folder)
+        self.assertIsNone(apihome_resp.exceptionFolder)
+        self.assertFalse(apihome_resp.isCopycomplete)
+        self.assertIsNone(apihome_resp.status)
+        self.assertIsNone(apihome_resp.message)
 
-    def test_all_parameters_initialization(self):
-        test_params = {
-            'useremailid': 'user@example.com',
-            'username': 'test_user',
-            'userguid': '1234-5678',
-            'channelname': 'Test Channel',
-            'channelurl': 'https://channel.example.com',
-            'sharepointurl': 'https://sharepoint.example.com',
-            'isAuthorized': True,
-            'folder': '/main_folder',
-            'exceptionFolder': '/exceptions',
-            'isCopycomplete': True,
-            'status': 200,
-            'message': 'Operation successful'
-        }
-
-        resp = ApihomeResp(**test_params)
-        self.assertEqual(resp.useremailid, test_params['useremailid'])
-        self.assertEqual(resp.username, test_params['username'])
-        self.assertEqual(resp.userguid, test_params['userguid'])
-        self.assertEqual(resp.channelname, test_params['channelname'])
-        self.assertEqual(resp.channelurl, test_params['channelurl'])
-        self.assertEqual(resp.sharepointurl, test_params['sharepointurl'])
-        self.assertTrue(resp.isAuthorized)
-        self.assertEqual(resp.folder, test_params['folder'])
-        self.assertEqual(resp.exceptionFolder, test_params['exceptionFolder'])
-        self.assertTrue(resp.isCopycomplete)
-        self.assertEqual(resp.status, test_params['status'])
-        self.assertEqual(resp.message, test_params['message'])
+    def test_custom_initialization(self):
+        apihome_resp = ApihomeResp(useremailid="user@example.com", username="user1", userguid="guid123", channelname="channel1",
+                                   channelurl="http://channel.com", sharepointurl="http://sharepoint.com", isAuthorized=True,
+                                   folder="folder1", exceptionFolder="exceptionFolder1", isCopycomplete=True, status="active", message="success")
+        self.assertEqual(apihome_resp.useremailid, "user@example.com")
+        self.assertEqual(apihome_resp.username, "user1")
+        self.assertEqual(apihome_resp.userguid, "guid123")
+        self.assertEqual(apihome_resp.channelname, "channel1")
+        self.assertEqual(apihome_resp.channelurl, "http://channel.com")
+        self.assertEqual(apihome_resp.sharepointurl, "http://sharepoint.com")
+        self.assertTrue(apihome_resp.isAuthorized)
+        self.assertEqual(apihome_resp.folder, "folder1")
+        self.assertEqual(apihome_resp.exceptionFolder, "exceptionFolder1")
+        self.assertTrue(apihome_resp.isCopycomplete)
+        self.assertEqual(apihome_resp.status, "active")
+        self.assertEqual(apihome_resp.message, "success")
 
 if __name__ == '__main__':
     unittest.main()
