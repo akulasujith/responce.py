@@ -7,24 +7,26 @@ class ApirespBase(ABC):
         self._respjson = None
 
     @abstractmethod
-    def setResponse(self,resp=None):
-      raise NotImplementedError
+    def setResponse(self, resp=None):
+        """Abstract method to set the response."""
+        pass  # Add a pass statement
 
     @abstractmethod
     def getResponse(self):
-      raise NotImplementedError
+        """Abstract method to get the response."""
+        pass  # Add a pass statement
 
 class ApirespHandler(ApirespBase):
     def __init__(self):
         super().__init__()
 
-    def setResponse(self,resp=None):    
+    def setResponse(self, resp=None):
         self._respjson = resp
 
-    def getResponse(self):    
+    def getResponse(self):
         respdict = self._respjson.__dict__
-        respdict.pop("channelname",None)
-        respdict.pop("channelurl",None)
+        respdict.pop("channelname", None)
+        respdict.pop("channelurl", None)
         return jsonify(respdict)
 
 class MockResponse:
@@ -73,15 +75,14 @@ class TestApirespHandler(unittest.TestCase):
                 pass
 
         dummy_instance = DummyApirespBase()
-        self.assertTrue(isinstance(dummy_instance,ApirespBase))
+        self.assertTrue(isinstance(dummy_instance, ApirespBase))
 
-        # Create a new class that inherits from ApirespBase and implements the abstract methods with pass
         class ConcreteApirespBase(ApirespBase):
             def setResponse(self, resp=None):
-                pass
+                super().setResponse(resp)
 
             def getResponse(self):
-                pass
+                super().getResponse()
 
         concrete_instance = ConcreteApirespBase()
         concrete_instance.setResponse()
