@@ -1,68 +1,28 @@
-import unittest
-from abc import ABC, abstractmethod
-from flask import jsonify, Flask
+pytest --cov . test/ --cov-report html
+================================================== test session starts ==================================================
+platform win32 -- Python 3.9.13, pytest-7.2.0, pluggy-1.5.0
+rootdir: C:\Sujith\Projects\SADRD\FinanceIT_SADRD\API
+plugins: Flask-Dance-3.2.0, cov-4.0.0
+collected 73 items
 
-class ApirespBase(ABC):
-    def __init__(self):
-        self._respjson = None
+test\test_APIHome.py .........                                                                                     [ 12%]
+test\test_config.py .....................                                                                          [ 41%]
+test\test_db.py .                                                                                                  [ 42%] 
+test\test_globalvars.py .                                                                                          [ 43%] 
+test\Entities\test_Customentities.py ....                                                                          [ 49%]
+test\Entities\test_dbormschemas.py .........                                                                       [ 61%]
+test\Services\test_APIResponse.py F...                                                                             [ 67%]
+test\Services\test_Auth.py ....                                                                                    [ 72%] 
+test\Services\test_CustomException.py ..                                                                           [ 75%]
+test\Services\test_dboperations.py ...........                                                                     [ 90%]
+test\Services\test_fileoperations.py ....                                                                          [ 95%]
+test\Services\test_logoperations.py .                                                                              [ 97%] 
+test\Services\test_parentparser.py ..                                                                              [100%]
 
-    @abstractmethod
-    def setResponse(self,resp=None):
-      raise NotImplementedError
+======================================================= FAILURES ======================================================== 
+___________________________________ TestApirespHandler.test_abstract_methods_of_base ____________________________________ 
 
-    @abstractmethod
-    def getResponse(self):
-      raise NotImplementedError
-
-class ApirespHandler(ApirespBase):
-    def __init__(self):
-        super().__init__()
-
-    def setResponse(self,resp=None):    
-        self._respjson = resp
-
-    def getResponse(self):    
-        respdict = self._respjson.__dict__
-        respdict.pop("channelname",None)
-        respdict.pop("channelurl",None)
-        return jsonify(respdict)
-
-class MockResponse:
-    def __init__(self, data):
-        self.__dict__ = data
-
-class TestApirespHandler(unittest.TestCase):
-    def setUp(self):
-        self.app = Flask(__name__)
-        self.app_context = self.app.app_context()
-        self.app_context.push()
-
-    def tearDown(self):
-        self.app_context.pop()
-
-    def test_set_response(self):
-        handler = ApirespHandler()
-        mock_data = {"key1": "value1", "key2": "value2"}
-        mock_resp = MockResponse(mock_data)
-        handler.setResponse(mock_resp)
-        self.assertEqual(handler._respjson, mock_resp)
-
-    def test_get_response_without_channel_info(self):
-        handler = ApirespHandler()
-        mock_data = {"key1": "value1", "key2": "value2"}
-        mock_resp = MockResponse(mock_data)
-        handler.setResponse(mock_resp)
-        response = handler.getResponse()
-        self.assertEqual(response.get_json(), mock_data)
-
-    def test_get_response_with_channel_info(self):
-        handler = ApirespHandler()
-        mock_data = {"key1": "value1", "channelname": "test_channel", "channelurl": "test_url"}
-        mock_resp = MockResponse(mock_data)
-        handler.setResponse(mock_resp)
-        response = handler.getResponse()
-        expected_data = {"key1": "value1"}
-        self.assertEqual(response.get_json(), expected_data)
+self = <test.Services.test_APIResponse.TestApirespHandler testMethod=test_abstract_methods_of_base>
 
     def test_abstract_methods_of_base(self):
         class DummyApirespBase(ApirespBase):
@@ -74,11 +34,51 @@ class TestApirespHandler(unittest.TestCase):
 
         dummy_instance = DummyApirespBase()
         self.assertTrue(isinstance(dummy_instance,ApirespBase))
-        base = ApirespBase()
-        with self.assertRaises(NotImplementedError):
-            base.setResponse()
-        with self.assertRaises(NotImplementedError):
-            base.getResponse()
+>       base = ApirespBase()
+E       TypeError: Can't instantiate abstract class ApirespBase with abstract methods getResponse, setResponse
 
-if __name__ == '__main__':
-    unittest.main(argv=['first-arg-is-ignored'], exit=False)
+test\Services\test_APIResponse.py:77: TypeError
+=================================================== warnings summary ==================================================== 
+venv\lib\site-packages\pandas\compat\numpy\__init__.py:10
+  C:\Sujith\Projects\SADRD\FinanceIT_SADRD\API\venv\lib\site-packages\pandas\compat\numpy\__init__.py:10: DeprecationWarning: distutils Version classes are deprecated. Use packaging.version instead.
+    _nlv = LooseVersion(_np_version)
+
+venv\lib\site-packages\pandas\compat\numpy\__init__.py:11
+  C:\Sujith\Projects\SADRD\FinanceIT_SADRD\API\venv\lib\site-packages\pandas\compat\numpy\__init__.py:11: DeprecationWarning: distutils Version classes are deprecated. Use packaging.version instead.
+    np_version_under1p17 = _nlv < LooseVersion("1.17")
+
+venv\lib\site-packages\pandas\compat\numpy\__init__.py:12
+  C:\Sujith\Projects\SADRD\FinanceIT_SADRD\API\venv\lib\site-packages\pandas\compat\numpy\__init__.py:12: DeprecationWarning: distutils Version classes are deprecated. Use packaging.version instead.
+    np_version_under1p18 = _nlv < LooseVersion("1.18")
+
+venv\lib\site-packages\pandas\compat\numpy\__init__.py:13
+  C:\Sujith\Projects\SADRD\FinanceIT_SADRD\API\venv\lib\site-packages\pandas\compat\numpy\__init__.py:13: DeprecationWarning: distutils Version classes are deprecated. Use packaging.version instead.
+    _np_version_under1p19 = _nlv < LooseVersion("1.19")
+
+venv\lib\site-packages\pandas\compat\numpy\__init__.py:14
+  C:\Sujith\Projects\SADRD\FinanceIT_SADRD\API\venv\lib\site-packages\pandas\compat\numpy\__init__.py:14: DeprecationWarning: distutils Version classes are deprecated. Use packaging.version instead.
+    _np_version_under1p20 = _nlv < LooseVersion("1.20")
+
+venv\lib\site-packages\setuptools\_distutils\version.py:337
+  C:\Sujith\Projects\SADRD\FinanceIT_SADRD\API\venv\lib\site-packages\setuptools\_distutils\version.py:337: DeprecationWarning: distutils Version classes are deprecated. Use packaging.version instead.
+    other = LooseVersion(other)
+
+venv\lib\site-packages\pandas\compat\numpy\function.py:120
+venv\lib\site-packages\pandas\compat\numpy\function.py:120
+  C:\Sujith\Projects\SADRD\FinanceIT_SADRD\API\venv\lib\site-packages\pandas\compat\numpy\function.py:120: DeprecationWarning: distutils Version classes are deprecated. Use packaging.version instead.
+    if LooseVersion(__version__) >= LooseVersion("1.17.0"):
+
+venv\lib\site-packages\flask_sqlalchemy\__init__.py:14
+venv\lib\site-packages\flask_sqlalchemy\__init__.py:14
+  C:\Sujith\Projects\SADRD\FinanceIT_SADRD\API\venv\lib\site-packages\flask_sqlalchemy\__init__.py:14: DeprecationWarning: '_app_ctx_stack' is deprecated and will be removed in Flask 2.3.
+    from flask import _app_ctx_stack, abort, current_app, request
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+
+---------- coverage: platform win32, python 3.9.13-final-0 -----------
+Coverage HTML written to dir htmlcov
+
+================================================ short test summary info ================================================ 
+FAILED test/Services/test_APIResponse.py::TestApirespHandler::test_abstract_methods_of_base - TypeError: Can't instantiate abstract class ApirespBase with abstract methods getResponse, setResponse
+======================================= 1 failed, 72 passed, 10 warnings in 4.03s ======================================= 
+PS C:\Sujith\Projects\SADRD\FinanceIT_SADRD\API> 
