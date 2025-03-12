@@ -74,6 +74,11 @@ class TestApirespHandler(unittest.TestCase):
 
         dummy_instance = DummyApirespBase()
         self.assertTrue(isinstance(dummy_instance,ApirespBase))
+        base = ApirespBase()
+        with self.assertRaises(NotImplementedError):
+            base.setResponse()
+        with self.assertRaises(NotImplementedError):
+            base.getResponse()
 
 if __name__ == '__main__':
     unittest.main(argv=['first-arg-is-ignored'], exit=False)
